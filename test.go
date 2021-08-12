@@ -7,7 +7,7 @@ import (
 
 func test () {
     var db ipsrv.IPSrvDB
-    db.Filename = "/home/ipsrv/dat/20210809.dat"
+    db.Filename = "/path/to/ipsrv.dat"
     db.Mode = "mmap"
     db.Open()
     fmt.Println(db.Find("8.8.8.255"))
