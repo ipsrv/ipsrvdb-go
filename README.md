@@ -1,10 +1,10 @@
 # ipsrvdb-go
 
 # Feature
-2. Support IPv4 & IPv6.
-3. Support output db date, description and header.
-4. Support output raw IP info and IP info in a dinctionary.
-5. Support load the database into memory or using MMAP.
+1. Support IPv4 & IPv6.
+2. Support output db date, description and header.
+3. Support output raw IP info and IP info in a map.
+4. Support load the database into memory or using MMAP.
 
 # Installing
 ```
