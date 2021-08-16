@@ -2,7 +2,7 @@ package ipsrv
 
 import (
     "fmt"
-    "ipsrv"
+	"github.com/ipsrv/ipsrvdb-go"
 )
 
 func test () {
@@ -13,4 +13,5 @@ func test () {
     fmt.Println(db.Find("8.8.8.255"))
     fmt.Println(db.Findx("8.8.8.255"))
     fmt.Println(db.GetHeader(), db.GetDate(), db.GetDescription())
+    db.Close()
 }

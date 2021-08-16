@@ -5,7 +5,6 @@ import (
     "io"
     "fmt"
     "net"
-    "math/big"
     "bytes"
     "strings"
     "encoding/binary"
@@ -78,6 +77,15 @@ func (db *IPSrvDB) Open() {
     }
 }
 
+func (db *IPSrvDB) Close() {
+    if db.M != nil {
+        db.M.Close()
+    }
+    if db.F != nil {
+        db.F.Close()
+    }
+}
+
 func (db *IPSrvDB) ReadAt(b []byte, off int64) (n int, err error) {
     if db.Mode == "mmap" {
         return db.M.ReadAt(b, off)
@@ -127,6 +135,34 @@ func (db *IPSrvDB) GetDescription() string {
     return db.Description
 }
 
+func Cmp(a []byte, b []byte) int {
+    if len(b) == 4 {
+        for i := 0; i < 12; i++ {
+            if a[i] > 0 {
+                return 1
+            }
+        }
+        j := 0
+        for i := 12; i < 16; i++ {
+            if a[i] > b[j] {
+                return 1
+            } else if a[i] < b[j] {
+                return -1
+            }
+            j++
+        }
+    } else {
+        for i := 0; i < 16; i++ {
+            if a[i] > b[i] {
+                return 1
+            } else if a[i] < b[i] {
+                return -1
+            }
+        }
+    }
+    return 0
+}
+
 func (db *IPSrvDB) Find(ipstr string) string {
     var ip []byte
     if strings.Index(ipstr, ":") != -1 {
@@ -134,9 +170,6 @@ func (db *IPSrvDB) Find(ipstr string) string {
     } else {
         ip = net.ParseIP(ipstr).To4()
     }
-
-    ipint := big.NewInt(0)
-    ipint.SetBytes(ip)
 
     start := 0
     mid := 0
@@ -147,15 +180,10 @@ func (db *IPSrvDB) Find(ipstr string) string {
         }
         mid = int((start + end) / 2)
 
-        high := Bytes8ToInt(db.Index(mid*24, mid*24+8))
-        low := Bytes8ToInt(db.Index(mid*24+8, mid*24+16))
-
-        unpacked := big.NewInt(int64(high))
-        unpacked = unpacked.Lsh(unpacked, 64)
-        unpacked = unpacked.Or(unpacked, big.NewInt(int64(low)))
-        if unpacked.Cmp(ipint) > 0 {
+        cmp := Cmp(db.Index(mid*24, mid*24+16), ip)
+        if cmp > 0 {
             end = mid
-        } else if unpacked.Cmp(ipint) < 0 {
+        } else if cmp < 0 {
             start = mid
             if start == end - 1 {
                 offset0 := Bytes4ToInt(db.Index(mid*24+16, mid*24+20))
@@ -164,7 +192,7 @@ func (db *IPSrvDB) Find(ipstr string) string {
                 ret := string(info[:])
                 return ret
             }
-        } else if unpacked.Cmp(ipint) == 0 {
+        } else if cmp == 0 {
             offset0 := Bytes4ToInt(db.Index(mid*24+16, mid*24+20))
             offset1 :=  Bytes4ToInt(db.Index(mid*24+20, mid*24+24))
             info := db.Data(int(offset0), int(offset0+offset1))
